@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>smg.rip</title>
+
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;600&display=swap');
+
+    body {
+        margin: 0;
+        background: #000;
+        font-family: "Inter", sans-serif;
+        overflow: hidden;
+        cursor: none; /* hide system cursor */
+    }
+
+    a {
+      text-decoration: none;
+    }
+	
+    /* Background */
+    .bg {
+        position: fixed;
+        inset: 0;
+        background: url("bg.png") center/cover no-repeat;
+        filter: blur(2px) brightness(0.40);
+        z-index: 1;
+    }
+
+    /* Fade-in animation */
+    .fade {
+        animation: fadein 1.2s ease forwards;
+        opacity: 0;
+    }
+    @keyframes fadein {
+        to { opacity: 1; }
+    }
+
+    /* Tap overlay */
+    .tap-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,0.85);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-size: 1.7rem;
+        color: white;
+        z-index: 999;
+        cursor: pointer;
+    }
+
+    /* Center horizontal bar */
+    .center-bar {
+        position: absolute;
+        top: 20%;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 75%;
+        max-width: 400px;
+        padding: 60px 20px;
+        background: rgba(0,0,0,0.33);
+        backdrop-filter: blur(6px);
+        border-radius: 12px;
+        text-align: center;
+        z-index: 3;
+    }
+
+    .ak-icon-small {
+        width: 90px;
+        margin-bottom: 16px;
+        filter: drop-shadow(0 0 10px white);
+    }
+    .title {
+        font-size: 2.8rem;
+        color: white;
+        font-weight: 600;
+		text-shadow: 0 0 10px rgba(255,255,255,0.9);
+    }
+
+    .email {
+        font-size: 1.1rem;
+        color: #ddd;
+        margin-top: 6px;
+    }
+
+    /* Steam */
+    .steam {
+        width: 90px;
+        margin-top: 40px;
+        cursor: pointer;
+        transition: 0.25s;
+        filter: drop-shadow(0 0 10px rgba(255,255,255,0.7));
+    }
+    .steam:hover {
+        transform: scale(1.1);
+        filter: drop-shadow(0 0 16px rgba(255,255,255,1));
+    }
+
+    /* Bottom right music panel */
+    .music-panel {
+        position: fixed;
+        bottom: 30px;
+        right: 40px;
+        background: rgba(0,0,0,0.33);
+        backdrop-filter: blur(6px);
+        padding: 18px 24px;
+        border-radius: 10px;
+        color: white;
+        z-index: 5;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .song-title {
+        font-size: 1rem;
+    }
+    .song-title small {
+        opacity: 0.7;
+        font-size: 0.75rem;
+    }
+
+    /* Volume toggle */
+    .volume-btn {
+        cursor: pointer;
+        font-size: 1.3rem;
+        transition: .2s;
+        align-self: flex-end;
+        opacity: 0.85;
+    }
+    .volume-btn:hover {
+        transform: scale(1.2);
+        opacity: 1;
+    }
+
+    /* Progress bar */
+    .progress-container {
+        width: 180px;
+        height: 6px;
+        background: rgba(255,255,255,0.25);
+        border-radius: 4px;
+        cursor: pointer;
+        position: relative;
+    }
+
+    .progress {
+        height: 100%;
+        width: 0%;
+        background: white;
+        border-radius: 4px;
+        transition: width 0.1s linear;
+    }
+
+    /* Custom glowing cursor */
+    .cursor {
+        position: fixed;
+        width: 15px;
+        height: 15px;
+        background: white;
+        border-radius: 50%;
+        pointer-events: none;
+        z-index: 9999;
+        transition: transform 0.15s ease, box-shadow 0.15s ease;
+        mix-blend-mode: screen;
+    }
+    .cursor.hover {
+        transform: scale(2.1);
+        box-shadow: 0 0 22px white;
+    }
+
+    @media (max-width: 700px) {
+        .center-bar { width: 88%; padding: 45px 22px; top: 32%; }
+        .music-panel { right: 20px; bottom: 20px; }
+        .progress-container { width: 150px; }
+        .ak { width: 180px; left: 12%; top: 12%; }
+    }
+</style>
+</head>
+
+<body>
+
+<div class="bg"></div>
+
+<div class="tap-overlay" id="tapStart">Tap to enter</div>
+
+<!-- Center content -->
+<div class="center-bar fade">
+
+  <img src="assets/ak.png" class="ak-icon-small">
+  <div class="title">smg.rip</div>
+  <a href="mailto:n@smg.rip" target="_blank">
+  <div class="email">n@smg.rip</div>
+  </a>
+
+    <img src="assets/steam.png" class="steam"
+         onclick="window.open('https://steamcommunity.com/id/-smg')">
+</div>
+
+<!-- Music Panel -->
+<div class="music-panel fade">
+    <div class="song-title">
+        ♪ Forever (Instrumental)<br>
+        <small>Dough Glacier</small>
+    </div>
+
+    <div class="progress-container" id="progressContainer">
+        <div class="progress" id="progress"></div>
+    </div>
+
+    <div class="volume-btn" id="volBtn">🔊</div>
+</div>
+
+<audio id="bgm" src="assets/song.mp3" loop></audio>
+
+<div class="cursor" id="cursor"></div>
+
+<script>
+/* Tap to start */
+const tap = document.getElementById("tapStart");
+const audio = document.getElementById("bgm");
+const volBtn = document.getElementById("volBtn");
+const cursor = document.getElementById("cursor");
+const progress = document.getElementById("progress");
+const progressContainer = document.getElementById("progressContainer");
+
+tap.addEventListener("click", () => {
+    tap.style.opacity = "0";
+    tap.style.pointerEvents = "none";
+    setTimeout(() => tap.remove(), 400);
+    audio.volume = 0.75;
+    audio.play();
+});
+
+/* Volume toggle */
+let muted = false;
+volBtn.addEventListener("click", () => {
+    muted = !muted;
+    audio.muted = muted;
+    volBtn.textContent = muted ? "🔇" : "🔊";
+});
+
+/* Song progress bar updates */
+audio.addEventListener("timeupdate", () => {
+    const percent = (audio.currentTime / audio.duration) * 100;
+    progress.style.width = percent + "%";
+});
+
+/* Seek on click */
+progressContainer.addEventListener("click", (e) => {
+    const rect = progressContainer.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const percent = x / rect.width;
+    audio.currentTime = percent * audio.duration;
+});
+
+/* Custom cursor */
+document.addEventListener("mousemove", (e) => {
+    cursor.style.left = e.clientX - 11 + "px";
+    cursor.style.top = e.clientY - 11 + "px";
+});
+
+/* Hover glow */
+document.querySelectorAll(".steam, .volume-btn, .progress-container").forEach(el => {
+    el.addEventListener("mouseenter", () => cursor.classList.add("hover"));
+    el.addEventListener("mouseleave", () => cursor.classList.remove("hover"));
+});
+</script>
+
+</body>
+</html>
